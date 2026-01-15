@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab4-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lab4-frontend
+  template:
+    metadata:
+      labels:
+        app: lab4-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/pozitp/lab4-frontend:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: VITE_API_URL
+              value: http://lab4-backend-service:8080
+      imagePullSecrets:
+        - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab4-frontend-service
+spec:
+  type: NodePort
+  selector:
+    app: lab4-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lab4-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: lab4.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lab4-frontend-service
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: lab4-backend-service
+                port:
+                  number: 8080

@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: lab4-pipeline
+spec:
+  params:
+    - name: repo-url
+      type: string
+      default: https://github.com/pozitp/lab4-repo
+    - name: backend-image
+      type: string
+      default: ghcr.io/pozitp/lab4-backend:latest
+    - name: frontend-image
+      type: string
+      default: ghcr.io/pozitp/lab4-frontend:latest
+  workspaces:
+    - name: shared-workspace
+    - name: docker-credentials
+  tasks:
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.repo-url)
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    - name: build-backend
+      taskRef:
+        name: kaniko
+      runAfter:
+        - git-clone
+      params:
+        - name: IMAGE
+          value: $(params.backend-image)
+        - name: CONTEXT
+          value: .
+        - name: DOCKERFILE
+          value: ./Dockerfile
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: docker-credentials
+    - name: build-frontend
+      taskRef:
+        name: kaniko
+      runAfter:
+        - git-clone
+      params:
+        - name: IMAGE
+          value: $(params.frontend-image)
+        - name: CONTEXT
+          value: ./frontend
+        - name: DOCKERFILE
+          value: ./frontend/Dockerfile
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: docker-credentials

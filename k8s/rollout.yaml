@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: lab4-rollout
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lab4-app
+  template:
+    metadata:
+      labels:
+        app: lab4-app
+    spec:
+      containers:
+        - name: lab4-app
+          image: ghcr.io/pozitp/lab4-app:latest
+          ports:
+            - containerPort: 8080
+  strategy:
+    canary:
+      steps:
+        - setWeight: 20
+        - pause: {}
+        - setWeight: 100
